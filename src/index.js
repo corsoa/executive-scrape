@@ -1,10 +1,25 @@
 import dotenv from 'dotenv';
 import puppeteer from 'puppeteer';
+import ExecutiveScrapePage from './ExecutiveScrapePage';
 
 dotenv.load();
 
 const BASE_URL = `${process.env.BASE_PROTOCOL}://${process.env.BASE_DOMAIN}`;
 const IS_HEADLESS = process.env.IS_HEADLESS !== 'false';
+
+async function handleLinkResults(browser, linkResults) {
+  const rawLinks = [];
+  linkResults.map((linkResult) => {
+    rawLinks.push(linkResult._remoteObject.value);
+  });
+  console.log(rawLinks);
+  const handledPages = [];
+  rawLinks.forEach((linkHref) => {
+    const page = new ExecutiveScrapePage(browser, linkHref);
+    handledPages.push(page.handlePage());
+  });
+  return Promise.all(handledPages);
+}
 
 async function run() {
   puppeteer.launch({
@@ -19,14 +34,13 @@ async function run() {
         getLinkHrefs.push(elementHandle.getProperty('href'));
       });
       Promise.all(getLinkHrefs).then((linkResults) => {
-        const rawLinks = [];
-        linkResults.map((linkResult) => {
-          rawLinks.push(linkResult._remoteObject.value);
+        handleLinkResults(browser, linkResults).then(() => {
+          browser.close();
         });
-        console.log(rawLinks);
-        browser.close();
       });
     });
   });
 }
+
+
 run();
