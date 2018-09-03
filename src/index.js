@@ -12,7 +12,21 @@ async function run() {
   }).then(async (browser) => {
     const page = await browser.newPage();
     await page.goto(BASE_URL);
-    await browser.close();
+    const topLevelMenuSelector = 'ul.nav.navbar-nav>li:nth-child(2)>ul>li>a';
+    page.$$(topLevelMenuSelector).then(async (results) => {
+      const getLinkHrefs = [];
+      results.map((elementHandle) => {
+        getLinkHrefs.push(elementHandle.getProperty('href'));
+      });
+      Promise.all(getLinkHrefs).then((linkResults) => {
+        const rawLinks = [];
+        linkResults.map((linkResult) => {
+          rawLinks.push(linkResult._remoteObject.value);
+        });
+        console.log(rawLinks);
+        browser.close();
+      });
+    });
   });
 }
 run();
